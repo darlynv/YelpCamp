@@ -1,0 +1,14 @@
+<!-- Error handling template --> 
+<!-- Ejs-mate code for inserting common boilerplate across all pages --> 
+<% layout('layouts/boilerplate')%>
+<div class="row">
+    <div class="col-6 offset-3">
+        <div class="alert alert-danger" role="alert">
+            <!-- Include specific error type -->
+            <h4 class="alert-heading"><%= err.message %></h4>
+            <!-- Include error stack trace -->
+            <p><%= err.stack %></p>
+            <hr>
+        </div>
+    </div>
+</div>

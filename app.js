@@ -2,9 +2,12 @@
 const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
-// Ejs-mate allows you to share HTML boilerplate between pages
+// Ejs-mate allows for the sharing of HTML boilerplate between pages
 const ejsMate = require('ejs-mate');
+// Joi allows for the validation of input data 
+const Joi = require('joi');
 const catchAsync = require('./utils/catchAsync');
+const ExpressError = require('./utils/ExpressErrors');
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
 // Connect to MongoDB database
@@ -67,8 +70,26 @@ app.get('/campgrounds/new', (req, res) => {
 // --------------------
 
 // Example of async error handling with custom wrapper function
-// Create a new campground
 app.post('/campgrounds', catchAsync(async (req, res, next) => {
+    // Define Joi schema with required keys and values
+    const campgroundSchema = Joi.object({
+        campground: Joi.object({
+            title: Joi.string().required(),
+            price: Joi.number().required().min(0),
+            image: Joi.string().required(),
+            location: Joi.string().required(),
+            description: Joi.string().required()
+        }).required()
+    })
+    // Pass data to Joi schema and destructure error from req.body 
+    const { error } = campgroundSchema.validate(req.body);
+    if (error) {
+        // Since error.details is an array of objects, map over each el.message and join with ',' if more than one element, and return a string 'msg'
+        const msg = error.details.map(el => el.message).join(',')
+        // Throw new Express error with 'msg'
+        throw new ExpressError(msg, 400)
+    }
+    // Create a new campground
     const campground = new Campground(req.body.campground);
     // Save new campground with await
     await campground.save();
@@ -94,7 +115,7 @@ app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
 app.put('/campgrounds/:id', catchAsync(async (req, res) => {
     // Destructure id value from req.params
     const { id } = req.params;
-    const campground = await Campground.findByIdAndUpdate(id,{ ...req.body.campground });
+    const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
     // Redirect to 'campgrounds/id' path
     res.redirect(`/campgrounds/${campground._id}`)
 }));
@@ -107,10 +128,18 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     res.redirect('/campgrounds');
 }));
 
-// This will run whenever an error is thrown
+// For every request and every path that doesn't exist, this will run
+app.all('*', (req, res, next) => {
+    next(new ExpressError('Page Not Found', 404))
+});
+
+// Error handler that will run whenever an error is thrown
 app.use((err, req, res, next) => {
-    res.send('Oops, something went wrong')
-})
+    // Destructure statusCode and message from thrown error and set default values if none provided
+    const { statusCode = 500 } = err;
+    if (!err.message) err.message = 'Oops, something went wrong.'
+    res.status(statusCode).render('error', { err });
+});
 
 // Listen for incoming requests on port 3000
 app.listen(3000, () => {
