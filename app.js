@@ -4,8 +4,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 // Ejs-mate allows for the sharing of HTML boilerplate between pages
 const ejsMate = require('ejs-mate');
-// Joi allows for the validation of input data 
-const Joi = require('joi');
+// Require Joi validation schemas
+const { campgroundSchema } = require('./schemas.js');
 const catchAsync = require('./utils/catchAsync');
 const ExpressError = require('./utils/ExpressErrors');
 const methodOverride = require('method-override');
@@ -33,6 +33,21 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 // Use methodOverride, to include PUT and DELETE requests, on all incoming requests
 app.use(methodOverride('_method'));
+
+// Validation function using Joi being passed as middleware
+const validateCampground = (req, res, next) => {
+    // Pass data to Joi schema and destructure error from req.body 
+    const { error } = campgroundSchema.validate(req.body);
+    if (error) {
+        // Since error.details is an array of objects, map over each el.message and join with ',' if more than one element, and return a string 'msg'
+        const msg = error.details.map(el => el.message).join(',')
+        // Throw new Express error with 'msg'
+        throw new ExpressError(msg, 400)
+        // If no error, pass as middleware
+    } else {
+        next();
+    }
+}
 
 // Render 'home' page
 app.get('/', (req, res) => {
@@ -69,26 +84,8 @@ app.get('/campgrounds/new', (req, res) => {
 // });
 // --------------------
 
-// Example of async error handling with custom wrapper function
-app.post('/campgrounds', catchAsync(async (req, res, next) => {
-    // Define Joi schema with required keys and values
-    const campgroundSchema = Joi.object({
-        campground: Joi.object({
-            title: Joi.string().required(),
-            price: Joi.number().required().min(0),
-            image: Joi.string().required(),
-            location: Joi.string().required(),
-            description: Joi.string().required()
-        }).required()
-    })
-    // Pass data to Joi schema and destructure error from req.body 
-    const { error } = campgroundSchema.validate(req.body);
-    if (error) {
-        // Since error.details is an array of objects, map over each el.message and join with ',' if more than one element, and return a string 'msg'
-        const msg = error.details.map(el => el.message).join(',')
-        // Throw new Express error with 'msg'
-        throw new ExpressError(msg, 400)
-    }
+// \Validation middleware and custom wrapper function for passing errors
+app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) => {
     // Create a new campground
     const campground = new Campground(req.body.campground);
     // Save new campground with await
@@ -111,8 +108,8 @@ app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
     res.render('campgrounds/edit', { campground });
 }));
 
-// Search campground by id and update it
-app.put('/campgrounds/:id', catchAsync(async (req, res) => {
+// Update campground
+app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
     // Destructure id value from req.params
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
