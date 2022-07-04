@@ -9,7 +9,14 @@ const CampgroundSchema = new Schema({
     image: String,
     price: Number,
     description: String,
-    location: String
+    location: String,
+    // Reviews are an array of IDs from the Review model schema
+    reviews: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Review'
+        }
+    ]
 });
 
 // Export Campground model
