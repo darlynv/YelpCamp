@@ -10,6 +10,7 @@ const catchAsync = require('./utils/catchAsync');
 const ExpressError = require('./utils/ExpressErrors');
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
+const Review = require('./models/review');
 // Connect to MongoDB database
 mongoose.connect('mongodb://localhost:27017/yelp-camp')
 
@@ -123,6 +124,20 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     await Campground.findByIdAndDelete(id);
     // Redirect to '/campgrounds' path
     res.redirect('/campgrounds');
+}));
+
+// Post review
+app.post('/campgrounds/:id/reviews', catchAsync(async (req, res) => {
+    // Request campground by ID
+    const campground = await Campground.findById(req.params.id);
+    // Create new review
+    const review = new Review(req.body.review);
+    // Push review
+    campground.reviews.push(review);
+    await review.save();
+    await campground.save();
+    // Redirect back to campground show page
+    res.redirect(`/campgrounds/${campground._id}`);
 }));
 
 // For every request and every path that doesn't exist, this will run
