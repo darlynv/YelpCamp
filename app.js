@@ -131,6 +131,7 @@ app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
 
 // Find campground by id and delete it
 app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
+    // Get id value from req.params
     const { id } = req.params;
     await Campground.findByIdAndDelete(id);
     // Redirect to '/campgrounds' path
@@ -149,6 +150,15 @@ app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async (req, res)
     await campground.save();
     // Redirect back to campground show page
     res.redirect(`/campgrounds/${campground._id}`);
+}));
+
+app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
+    // Get campground id and review id from req.params
+    const { id, reviewId } = req.params;
+    // Use mongo $pull to remove all instances of specific id from reviews array
+    await Campground.findByIdAndUpdate(id, { $pull: { reviews: reviewId } });
+    await Review.findByIdAndDelete(reviewId);
+    res.redirect(`/campgrounds/${id}`);
 }));
 
 // For every request and every path that doesn't exist, this will run
