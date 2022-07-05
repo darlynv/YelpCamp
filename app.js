@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 // Ejs-mate allows for the sharing of HTML boilerplate between pages
 const ejsMate = require('ejs-mate');
 // Require Joi validation schemas
-const { campgroundSchema } = require('./schemas.js');
+const { campgroundSchema, reviewSchema } = require('./schemas.js');
 const catchAsync = require('./utils/catchAsync');
 const ExpressError = require('./utils/ExpressErrors');
 const methodOverride = require('method-override');
@@ -35,7 +35,7 @@ app.use(express.urlencoded({ extended: true }));
 // Use methodOverride, to include PUT and DELETE requests, on all incoming requests
 app.use(methodOverride('_method'));
 
-// Validation function using Joi being passed as middleware
+// Campground validation middleware using Joi
 const validateCampground = (req, res, next) => {
     // Pass data to Joi schema and destructure error from req.body 
     const { error } = campgroundSchema.validate(req.body);
@@ -48,7 +48,18 @@ const validateCampground = (req, res, next) => {
     } else {
         next();
     }
-}
+};
+
+// Review validation middleware using Joi
+const validateReview = (req, res, next) => {
+    const { error } = reviewSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next();
+    }
+};
 
 // Render 'home' page
 app.get('/', (req, res) => {
@@ -85,7 +96,7 @@ app.get('/campgrounds/new', (req, res) => {
 // });
 // --------------------
 
-// \Validation middleware and custom wrapper function for passing errors
+// Add campground with server-side validation and error handling middleware
 app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) => {
     // Create a new campground
     const campground = new Campground(req.body.campground);
@@ -109,7 +120,7 @@ app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
     res.render('campgrounds/edit', { campground });
 }));
 
-// Update campground
+// Update campground with server-side validation and error handling middleware
 app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
     // Destructure id value from req.params
     const { id } = req.params;
@@ -126,8 +137,8 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     res.redirect('/campgrounds');
 }));
 
-// Post review
-app.post('/campgrounds/:id/reviews', catchAsync(async (req, res) => {
+// Post review with server-side validation and error handling middleware
+app.post('/campgrounds/:id/reviews', validateReview, catchAsync(async (req, res) => {
     // Request campground by ID
     const campground = await Campground.findById(req.params.id);
     // Create new review
