@@ -4,6 +4,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 // Ejs-mate allows for the sharing of HTML boilerplate between pages
 const ejsMate = require('ejs-mate');
+const session = require('express-session');
 // Require Joi validation schemas
 const { campgroundSchema, reviewSchema } = require('./schemas.js');
 const ExpressError = require('./utils/ExpressErrors');
@@ -34,10 +35,20 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 // Use methodOverride, to include PUT and DELETE requests, on all incoming requests
 app.use(methodOverride('_method'));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
+const sessionConfig = {
+    secret: 'thisisasecret',
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        httpOnly: true,
+        expires: Date.now() + 604800000,
+        maxAge: 604800000
+    }
+}
 
+app.use(session(sessionConfig));
 
 app.use('/campgrounds', campgrounds);
 app.use('/campgrounds/:id/reviews', reviews);
