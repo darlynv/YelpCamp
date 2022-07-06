@@ -35,6 +35,8 @@ app.use(express.urlencoded({ extended: true }));
 // Use methodOverride, to include PUT and DELETE requests, on all incoming requests
 app.use(methodOverride('_method'));
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 
 app.use('/campgrounds', campgrounds);
