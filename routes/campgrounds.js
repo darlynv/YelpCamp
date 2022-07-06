@@ -45,6 +45,7 @@ router.post('/', validateCampground, catchAsync(async (req, res, next) => {
     const campground = new Campground(req.body.campground);
     // Save new campground with await
     await campground.save();
+    req.flash('success', 'Successfully made a new campground!');
     // Redirect to 'campgrounds/id' path
     res.redirect(`campgrounds/${campground._id}`);
 }));
@@ -54,6 +55,10 @@ router.post('/', validateCampground, catchAsync(async (req, res, next) => {
 router.get('/:id', catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id).populate('reviews');
     // Pass campground variable to and render 'campgrounds/show' path
+    if (!campground) {
+        req.flash('error', 'Cannot find that campground');
+        res.redirect('/campgrounds');
+    }
     res.render('campgrounds/show', { campground });
 }));
 
@@ -62,6 +67,10 @@ router.get('/:id', catchAsync(async (req, res) => {
 router.get('/:id/edit', catchAsync(async (req, res) => {
     const campground = await Campground.findById(req.params.id)
     // Pass campground variable to 'campgrounds/edit' path
+    if (!campground) {
+        req.flash('error', 'Cannot find that campground');
+        res.redirect('/campgrounds');
+    }
     res.render('campgrounds/edit', { campground });
 }));
 
@@ -71,6 +80,7 @@ router.put('/:id', validateCampground, catchAsync(async (req, res) => {
     // Destructure id value from req.params
     const { id } = req.params;
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
+    req.flash('success', 'Successfully updated campground!');
     // Redirect to 'campgrounds/id' path
     res.redirect(`/campgrounds/${campground._id}`)
 }));
@@ -81,6 +91,7 @@ router.delete('/:id', catchAsync(async (req, res) => {
     // Get id value from req.params
     const { id } = req.params;
     await Campground.findByIdAndDelete(id);
+    req.flash('success', 'Successsfully deleted campground!');
     // Redirect to '/campgrounds' path
     res.redirect('/campgrounds');
 }));

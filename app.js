@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 // Ejs-mate allows for the sharing of HTML boilerplate between pages
 const ejsMate = require('ejs-mate');
 const session = require('express-session');
+const flash = require('connect-flash');
 // Require Joi validation schemas
 const { campgroundSchema, reviewSchema } = require('./schemas.js');
 const ExpressError = require('./utils/ExpressErrors');
@@ -49,6 +50,14 @@ const sessionConfig = {
 }
 
 app.use(session(sessionConfig));
+app.use(flash());
+
+// Middleware that passes whatever is under flash 'success' and passes it to locals under the key 'success'
+app.use((req, res, next) => {
+    res.locals.success = req.flash('success');
+    res.locals.error = req.flash('error');
+    next();
+})
 
 app.use('/campgrounds', campgrounds);
 app.use('/campgrounds/:id/reviews', reviews);
