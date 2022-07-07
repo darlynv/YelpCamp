@@ -69,8 +69,10 @@ passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 
-// Middleware that passes whatever is under flash 'success' and passes it to locals under the key 'success'
 app.use((req, res, next) => {
+    // Give access to req.user to all templates
+    res.locals.currentUser = req.user;
+    // Middleware that passes whatever is under flash 'success' or 'error' and passes it to locals under the key 'success'or 'error'
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     next();

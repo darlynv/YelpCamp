@@ -16,9 +16,12 @@ router.post('/register', catchAsync(async (req, res) => {
         // Pass email and username to a new user
         const user = new User({ email, username });
         const registeredUser = await User.register(user, password);
-        console.log(registeredUser);
-        req.flash('success', 'Welcome to Yelp Camp!');
-        res.redirect('/campgrounds');
+        // Log in registered user
+        req.login(registeredUser, err => {
+            if (err) return next(e);
+            req.flash('success', 'Welcome to Yelp Camp!');
+            res.redirect('/campgrounds');
+        })
     } catch (e) {
         req.flash('error', e.message);
         res.redirect('register');
@@ -30,10 +33,14 @@ router.get('/login', (req, res) => {
     res.render('users/login');
 });
 
-// Built in passport middleware that authenticates user
-router.post('/login', passport.authenticate('local', { failureFlash: true, failureRedirect: '/login'}), catchAsync(async (req, res) => {
+// Built in passport middleware that authenticates user ... 'keepSessionInfo: true' necessary for returnTO functionality as of Passport 0.6.0
+router.post('/login', passport.authenticate('local', { failureFlash: true, failureRedirect: '/login', keepSessionInfo: true}), catchAsync(async (req, res) => {
     req.flash('success', 'Welcome back!');
-    res.redirect('/campgrounds');
+    // redirectUrl = original URL, or /campgrounds if it does not exist
+    const redirectUrl = req.session.returnTo || '/campgrounds';
+    // Delete redirectUrl from session after it is used
+    delete req.session.returnTo;
+    res.redirect(redirectUrl);
 }));
 
 router.get('/logout', (req, res, next) => {
