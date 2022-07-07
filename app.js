@@ -6,13 +6,18 @@ const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const session = require('express-session');
 const flash = require('connect-flash');
-// Require Joi validation schemas
+// Joi validation schemas
 const { campgroundSchema, reviewSchema } = require('./schemas.js');
 const ExpressError = require('./utils/ExpressErrors');
 const methodOverride = require('method-override');
-const campgrounds = require('./routes/campgrounds');
-const reviews = require('./routes/reviews');
+const passport = require('passport');
+const LocalStrategy = require('passport-local');
+const User = require('./models/user');
 
+// Routes
+const userRoutes = require('./routes/users');
+const campgroundRoutes = require('./routes/campgrounds');
+const reviewRoutes = require('./routes/reviews');
 // Connect to MongoDB database
 mongoose.connect('mongodb://localhost:27017/yelp-camp')
 
@@ -32,7 +37,7 @@ app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
 // Set views directory for EJS
 app.set('views', path.join(__dirname, 'views'));
-// Use express.urlencoded on all incoming requests
+// Use express.urlencoded on all incoming requests to be able to parse them
 app.use(express.urlencoded({ extended: true }));
 // Use methodOverride, to include PUT and DELETE requests, on all incoming requests
 app.use(methodOverride('_method'));
@@ -48,19 +53,32 @@ const sessionConfig = {
         maxAge: 604800000
     }
 }
-
+// session() must be used before passport.session()
 app.use(session(sessionConfig));
 app.use(flash());
+
+// Required to initialize Passport
+app.use(passport.initialize());
+// Required for persistent login sessions
+app.use(passport.session());
+// Have Passport use LocalStrategy which will use authenticate method on User model
+passport.use(new LocalStrategy(User.authenticate()));
+// Serialize / store user in a session
+passport.serializeUser(User.serializeUser());
+// Deserialize / remove user from a session
+passport.deserializeUser(User.deserializeUser());
+
 
 // Middleware that passes whatever is under flash 'success' and passes it to locals under the key 'success'
 app.use((req, res, next) => {
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     next();
-})
+});
 
-app.use('/campgrounds', campgrounds);
-app.use('/campgrounds/:id/reviews', reviews);
+app.use('/', userRoutes);
+app.use('/campgrounds', campgroundRoutes);
+app.use('/campgrounds/:id/reviews', reviewRoutes);
 
 // Render 'home' page
 app.get('/', (req, res) => {
