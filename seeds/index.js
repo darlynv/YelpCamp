@@ -19,11 +19,12 @@ const sample = (array) => array[Math.floor(Math.random() * array.length)];
 // Generate random campgrounds and save to database
 const seedDB = async () => {
     await Campground.deleteMany({});
-    for(let i = 0; i < 50; i++){
+    for (let i = 0; i < 50; i++) {
         const random1000 = Math.floor(Math.random() * 1000);
         const price = Math.floor(Math.random() * 20) + 10;
         const camp = new Campground({
-            author: '62c628cf53b46e50b5864ffd',
+            // author: '62c628cf53b46e50b5864ffd',
+            author: '62c99ed572a016ab827a2f2e',
             location: `${cities[random1000].city}, ${cities[random1000].state}`,
             title: `${sample(descriptors)} ${sample(places)}`,
             image: 'https://source.unsplash.com/collection/483251',
