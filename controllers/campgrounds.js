@@ -13,9 +13,12 @@ module.exports.renderNewForm = (req, res) => {
 
 module.exports.createCampground = async (req, res, next) => {
     const campground = new Campground(req.body.campground);
+    // Map over array of data from Multer and create an array with path and filename
+    campground.images = req.files.map(f => ({url: f.path, filename: f.filename}));
     // Set current user as campground author
     campground.author = req.user._id;
     await campground.save();
+    console.log(campground);
     req.flash('success', 'Successfully made a new campground!');
     res.redirect(`campgrounds/${campground._id}`);
 };
