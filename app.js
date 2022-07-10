@@ -19,7 +19,7 @@ const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
 // Connect to MongoDB database
-mongoose.connect('mongodb://localhost:27017/yelp-camp')
+mongoose.connect('mongodb://localhost:27017/yelp-camp');
 
 // Variable for mongoose.connection
 const db = mongoose.connection;
@@ -52,7 +52,7 @@ const sessionConfig = {
         expires: Date.now() + 604800000,
         maxAge: 604800000
     }
-}
+};
 // session() must be used before passport.session()
 app.use(session(sessionConfig));
 app.use(flash());
