@@ -5,21 +5,26 @@ const Review = require('./review');
 // Variable for mongoose.Schema
 const Schema = mongoose.Schema;
 
-// Campground schema
+const ImageSchema = new Schema({
+    url: String,
+    filename: String
+});
+
+// Create virtual property for thumbnail that changes url to set thumbnail width for templates using cloudinary transform API
+ImageSchema.virtual('thumbnail').get(function () {
+    return this.url.replace('/upload', '/upload/w_200');
+});
+
+
 const CampgroundSchema = new Schema({
     title: String,
-    images: [
-        {
-            url: String,
-            filename: String
-        }
-    ],
+    images: [ImageSchema],
     price: Number,
     description: String,
     location: String,
     author: {
         type: Schema.Types.ObjectId,
-    ref: 'User'
+        ref: 'User'
     },
     // Reviews are an array of IDs from the Review model schema
     reviews: [
