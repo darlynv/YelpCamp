@@ -15,6 +15,8 @@ ImageSchema.virtual('thumbnail').get(function () {
     return this.url.replace('/upload', '/upload/w_200');
 });
 
+// Include virtuals when document converted to JSON -- necessary for mapbox
+const opts = { toJSON: { virtuals: true } };
 
 const CampgroundSchema = new Schema({
     title: String,
@@ -44,7 +46,13 @@ const CampgroundSchema = new Schema({
             ref: 'Review'
         }
     ]
+}, opts);
+
+// Virtual for properties option required by mapbox
+CampgroundSchema.virtual('properties.popupMarkup').get(function () {
+    return `<strong><a href="/campgrounds/${this._id}">${this.title}</a><strong>`;
 });
+
 
 // Use mongoose middleware to delete corresponding reveiws when deleting campground
 // Deleted document will be passed to the function and can be accessed as doc
